@@ -1,0 +1,57 @@
+
+%h1 WebSockets Test
+.status Warming
+.history
+%input{ :type => 'text' }
+
+
+:javascript
+
+  Chatterbox = function() {
+    Message = function(packet) {
+      a = packet.split(':')
+      this.type = a[0]
+      this.content = a[1]
+    }
+
+    $this = this
+    socket = this.socket = new WebSocket('ws://192.168.50.119:3001'),
+
+    this.socket.onopen = function(evt) {
+      $this.status("Connected.")
+    }
+
+    this.socket.onmessage = function(evt) {
+      msg = new Message(evt.data)
+      if(msg.type != 'chat') return
+      $this.show(msg)
+    }
+
+    this.socket.onclose = function(evt) {
+      $('input').attr('disabled', 'disabled')
+      $this.status('Disconnected')
+    }
+
+    this.status = function(message) {
+      $('.status').html(message)
+    }
+
+    this.show = function(message) {
+      $('.history').append($("<p>").html(message.content))
+      $('.history').scrollTop(99999999)
+    }
+
+    this.send = function(message) {
+      this.socket.send("chat:" + message)
+    }
+
+    $('input').on('keypress', function(event) {
+      if(event.charCode != 13) return
+      $this.send(event.target.value)
+      event.target.value = ''
+    })
+  }
+  $('input').focus()
+  chat = new Chatterbox()
+
+

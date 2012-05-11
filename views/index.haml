@@ -1,57 +1,79 @@
 
-%h1 WebSockets Test
-.status Warming
-.history
-%input{ :type => 'text' }
+#identity_prmopt
+  %h1 Who are ya?
+  %form{ :id => 'name_form' }
+    %input{ :type => 'text', :name => :name }
+
+#chat_window.hidden
+  %h1 Chat
+  .status Warming
+  .history
+  %input{ :type => 'text' }
 
 
 :javascript
-
-  Chatterbox = function() {
-    Message = function(packet) {
-      a = packet.split(':')
-      this.type = a[0]
-      this.content = a[1]
-    }
-
+  ChatterBox = function(name, chat_window) {
     $this = this
-    socket = this.socket = new WebSocket('ws://192.168.50.119:3001'),
-
-    this.socket.onopen = function(evt) {
-      $this.status("Connected.")
-    }
-
-    this.socket.onmessage = function(evt) {
-      msg = new Message(evt.data)
-      if(msg.type != 'chat') return
-      $this.show(msg)
-    }
-
-    this.socket.onclose = function(evt) {
-      $('input').attr('disabled', 'disabled')
-      $this.status('Disconnected')
-    }
+    $this.name = name
+    this.el = $(chat_window)
+    this.socket = new WebSocket('ws://127.0.0.1:3001')
 
     this.status = function(message) {
-      $('.status').html(message)
+      $this.el.find('.status').html(message)
     }
 
-    this.show = function(message) {
-      $('.history').append($("<p>").html(message.content))
-      $('.history').scrollTop(99999999)
+    this.show = function(msg) {
+      if(msg.type == 'chat')
+        $this.el.find('.history').append($("<p>").html(msg.content))
+      if(msg.type == 'connect')
+        $this.el.find('.history').append($("<p>").html(msg.content + " connected"))
+      if(msg.type == 'disconnect')
+        $this.el.find('.history').append($("<p>").html(msg.content + " disconnected"))
+
+      $this.el.find('.history').scrollTop(99999999)
     }
 
     this.send = function(message) {
-      this.socket.send("chat:" + message)
+      this.socket.send(JSON.stringify(message))
     }
 
-    $('input').on('keypress', function(event) {
-      if(event.charCode != 13) return
-      $this.send(event.target.value)
+    this.send_chat = function(message) {
+      this.send({ type: 'chat', content: message })
+    }
+
+    this.send_connect = function(message) {
+      this.send({ type: 'connect', content: message })
+    }
+
+    this.socket.onopen = function(evt) {
+      $this.send_connect($this.name)
+      $this.status("Connected as " + $this.name )
+    }
+
+    this.socket.onmessage = function(evt) {
+      return $this.show(JSON.parse(evt.data))
+    }
+
+    this.socket.onclose = function(evt) {
+      $this.status('Disconnected')
+    }
+
+    this.el.find('input').on('keypress', function(event) {
+      if(event.keyCode != 13) return
+      $this.send_chat('[' + $this.name + '] ' + event.target.value)
       event.target.value = ''
     })
   }
-  $('input').focus()
-  chat = new Chatterbox()
+
+  $(function() {
+    $('#name_form').on('submit', function(evt) {
+      $('#identity_prmopt').hide()
+      $('#chat_window').show()
+      cb = new ChatterBox($(evt.target).find('input').attr('value'), $('#chat_window'))
+      return false
+    })
+    $('form#name_form input').focus()
+  })
+
 
 

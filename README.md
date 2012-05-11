@@ -8,7 +8,9 @@ Feel free to use this code according to the MIT license.
 Running it
 =============
 
-git@github.com:alibby/ws-chat.git
+git clone git@github.com:alibby/ws-chat.git
+
+cd ws-chat
 
 bundle
 

@@ -10,13 +10,12 @@
   .history
   %input{ :type => 'text' }
 
-
 :javascript
   ChatterBox = function(name, chat_window) {
     $this = this
     $this.name = name
     this.el = $(chat_window)
-    this.socket = new WebSocket('ws://127.0.0.1:3001')
+    this.socket = new WebSocket('ws://#{request.host}:3001')
 
     this.status = function(message) {
       $this.el.find('.status').html(message)
